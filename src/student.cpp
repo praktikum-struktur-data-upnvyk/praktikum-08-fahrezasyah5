@@ -49,208 +49,98 @@ void clear(Node*& root) {
 // =============================================================================
 
 // =============================================================================
-// SOAL 1a — insert                                                     20 poin
+// SOAL 1a — insert                                                    20 poin
 // =============================================================================
-// Contoh:
-//   Mulai dari tree kosong, lalu masukkan 50, 30, 70, 20, 40, 60, 80
-//   berturut-turut:
-//
-//     50 masuk pertama, jadi ia menjadi root.
-//     30 < 50, ke kiri. Kiri masih kosong, jadi 30 ditempatkan di situ.
-//     70 > 50, ke kanan. Kanan masih kosong, jadi 70 ditempatkan di situ.
-//     20 < 50 ke kiri, lalu 20 < 30 ke kiri lagi. Kosong, 20 ditempatkan.
-//     40 < 50 ke kiri, lalu 40 > 30 ke kanan. Kosong, 40 ditempatkan.
-//     60 > 50 ke kanan, lalu 60 < 70 ke kiri. Kosong, 60 ditempatkan.
-//     80 > 50 ke kanan, lalu 80 > 70 ke kanan lagi. Kosong, 80 ditempatkan.
-//
-//   Hasilnya:
-//
-//               50
-//              ╱  ╲
-//            30    70
-//           ╱  ╲   ╱ ╲
-//         20   40 60   80
-//
-//     inorder(root) mencetak:  20 30 40 50 60 70 80
-//
-//   Nilai duplikat ditolak dan tree tidak berubah:
-//
-//     insert(root, 40);       // false — 40 sudah ada
-//     insert(root, 50);       // false — 50 sudah ada (kebetulan ia root)
-//     insert(root, 55);       // true  — 55 belum ada, masuk sebagai cabang
-//                             //         kiri milik 60
-// =============================================================================
-
 bool insert(Node*& root, int nilai) {
-    return false;
+    if (root == nullptr) {
+        root = new Node{nilai, nullptr, nullptr};
+        return true;
+    }
+    if (nilai < root->data) {
+        return insert(root->left, nilai);
+    } else if (nilai > root->data) {
+        return insert(root->right, nilai);
+    } else {
+        // Nilai duplikat ditolak
+        return false;
+    }
 }
 
 // =============================================================================
-// SOAL 1b — cari                                                       15 poin
+// SOAL 1b — cari                                                      15 poin
 // =============================================================================
-// Contoh:
-//
-//               50
-//              ╱  ╲
-//            30    70
-//           ╱  ╲   ╱ ╲
-//         20   40 60   80
-//
-//     const Node* n = cari(root, 60);
-//     // n->data bernilai 60
-//     //
-//     // Jalannya tiga langkah:
-//     //   60 > 50  -> ke cabang kanan
-//     //   60 < 70  -> ke cabang kiri milik 70
-//     //   60 == 60 -> ketemu
-//     //
-//     // Node 30, 20, dan 40 tidak pernah disentuh sama sekali.
-//
-//     cari(root, 50);      // node root sendiri
-//     cari(root, 20);      // node paling kiri
-//     cari(root, 25);      // nullptr — 25 tidak ada di tree
-//     cari(nullptr, 10);   // nullptr — tree-nya kosong
-// =============================================================================
-
 const Node* cari(const Node* root, int nilai) {
-    return nullptr;
+    if (root == nullptr || root->data == nilai) {
+        return root;
+    }
+    if (nilai < root->data) {
+        return cari(root->left, nilai);
+    }
+    return cari(root->right, nilai);
 }
 
 // =============================================================================
-// SOAL 2a — minimum                                                    10 poin
+// SOAL 2a — minimum                                                   10 poin
 // =============================================================================
-// Contoh:
-//
-//               50
-//              ╱  ╲
-//            30    70
-//           ╱  ╲   ╱ ╲
-//         20   40 60   80
-//
-//     minimum(root)->data;              // 20  — node paling kiri
-//     minimum(root->right)->data;       // 60  — paling kiri DI DALAM subtree
-//                                       //       kanan, yaitu subtree 70
-//     minimum(nullptr);                 // nullptr — kosong
-//
-//   Perhatikan pemanggilan kedua. Fungsi ini boleh dipanggil pada subtree mana
-//   pun, bukan cuma pada `root`. Sifat itulah yang dipakai Soal 2b.
-//
-//   Pada tree yang menjulur lurus ke kanan, node paling kiri adalah root itu
-//   sendiri:
-//
-//       10
-//         ╲
-//          20                minimum(root)->data;   // 10
-//            ╲
-//             30
-// =============================================================================
-
 const Node* minimum(const Node* root) {
-    return nullptr;
+    if (root == nullptr) return nullptr;
+    if (root->left == nullptr) return root;
+    return minimum(root->left);
 }
 
 // =============================================================================
-// SOAL 2b — hapus                                                      30 poin
+// SOAL 2b — hapus                                                     30 poin
 // =============================================================================
-//   ---------------------------------------------------------------------------
-//   KEADAAN 1 — node target tidak punya cabang sama sekali (0 child)
-//   ---------------------------------------------------------------------------
-//   Tidak ada yang perlu menggantikan. Node dilepas, tempatnya menjadi kosong.
-//
-//         30                    30
-//        ╱  ╲       hapus 20   ╱  ╲
-//      20    40      ------>        40
-//
-//   ---------------------------------------------------------------------------
-//   KEADAAN 2 — node target punya satu cabang saja (1 child)
-//   ---------------------------------------------------------------------------
-//   Cabang satu-satunya itu NAIK menggantikan tempat node target, beserta
-//   seluruh isi di bawahnya. Invariant tetap aman: apa pun yang tadinya benar di
-//   bawah node target, tetap benar di posisi barunya.
-//
-//         30                    30
-//        ╱           hapus 20  ╱
-//      20            ------>  15
-//     ╱
-//   15
-//
-//   ---------------------------------------------------------------------------
-//   KEADAAN 3 — node target punya dua cabang (2 child)
-//   ---------------------------------------------------------------------------
-//   Ini yang perlu dipikirkan. Tempatnya tidak boleh diisi sembarang nilai,
-//   karena penggantinya harus lebih besar daripada SELURUH cabang kiri dan
-//   sekaligus lebih kecil daripada SELURUH sisa cabang kanan.
-//
-//   Hanya ada satu nilai yang memenuhi keduanya: nilai TERKECIL pada cabang
-//   KANAN node target. Nilai itu disebut INORDER SUCCESSOR — dan mencarinya
-//   persis pekerjaan `minimum` yang baru Anda kerjakan di Soal 2a, dipanggil
-//   pada cabang kanan node target.
-//
-//   Sesudah nilai successor dipindahkan ke node target, node successor yang LAMA
-//   masih tertinggal di cabang kanan dan harus dihapus dari sana. Node successor
-//   dijamin tidak pernah punya cabang kiri — kalau punya, dia bukan yang
-//   terkecil — jadi penghapusannya kembali ke Keadaan 1 atau Keadaan 2.
-//
-//     Sebelum: hapus 50          Sesudah
-//
-//               50                        60
-//              ╱  ╲                      ╱  ╲
-//            30    70                  30    70
-//           ╱  ╲   ╱ ╲                ╱  ╲     ╲
-//         20   40 60   80           20   40     80
-//
-//     Langkahnya:
-//       1. cabang kanan node 50 adalah subtree 70;
-//       2. nilai terkecil di sana adalah 60 — itulah successor-nya;
-//       3. nilai 60 dipindahkan ke node target, menggantikan 50;
-//       4. node 60 yang lama dihapus dari cabang kanan.
-//
-//     inorder sesudahnya:  20 30 40 60 70 80    (tetap terurut naik)
-// =============================================================================
-
 bool hapus(Node*& root, int nilai) {
-    return false;
+    if (root == nullptr) return false;
+
+    if (nilai < root->data) {
+        return hapus(root->left, nilai);
+    } else if (nilai > root->data) {
+        return hapus(root->right, nilai);
+    } else {
+        // Node ditemukan
+        // Keadaan 1 & 2: Tidak punya anak atau hanya punya 1 anak
+        if (root->left == nullptr) {
+            Node* temp = root;
+            root = root->right;
+            delete temp;
+            return true;
+        } else if (root->right == nullptr) {
+            Node* temp = root;
+            root = root->left;
+            delete temp;
+            return true;
+        }
+
+        // Keadaan 3: Punya 2 anak
+        // Ambil nilai terkecil dari subtree kanan (inorder successor)
+        const Node* succ = minimum(root->right);
+        root->data = succ->data;
+        // Hapus successor yang lama dari subtree kanan
+        return hapus(root->right, succ->data);
+    }
 }
 
 // =============================================================================
-// SOAL 3 — termahalTerbeli                                              25 poin
+// SOAL 3 — termahalTerbeli                                             25 poin
 // =============================================================================
-// Contoh:
-//   Daftar harga sebuah toko (dalam ribuan rupiah):
-//
-//               50
-//              ╱  ╲
-//            30    70
-//           ╱  ╲     ╲
-//         20    40    80
-//
-//     Harga yang tersedia: 20, 30, 40, 50, 70, 80
-//
-//     termahalTerbeli(root, 65)->data;   // 50
-//         Yang terjangkau: 20, 30, 40, 50. Yang termahal di antaranya: 50.
-//         Harga 70 dan 80 kemahalan.
-//
-//     termahalTerbeli(root, 30)->data;   // 30
-//         Harganya PERSIS sama dengan uang Anda, dan itu masih terbeli.
-//
-//     termahalTerbeli(root, 45)->data;   // 40
-//         Yang terjangkau: 20, 30, 40. Yang termahal: 40.
-//
-//     termahalTerbeli(root, 75)->data;   // 70
-//         Harga 80 kemahalan, jadi yang termahal yang terbeli adalah 70.
-//
-//     termahalTerbeli(root, 99)->data;   // 80
-//         Semua terjangkau, jadi jawabannya harga yang paling mahal.
-//
-//     termahalTerbeli(root, 15);         // nullptr
-//         Bahkan barang termurah pun (20) sudah kemahalan.
-//
-//     termahalTerbeli(nullptr, 100);     // nullptr
-//         Tokonya tidak punya barang sama sekali.
-// =============================================================================
-
 const Node* termahalTerbeli(const Node* root, int uang) {
-    return nullptr;
+    const Node* terbaik = nullptr;
+    const Node* curr = root;
+
+    while (curr != nullptr) {
+        if (curr->data == uang) {
+            return curr; // Persis sama, langsung kembalikan karena ini yang paling maksimal yang pas
+        } else if (curr->data < uang) {
+            terbaik = curr;        // Masih terjangkau, simpan sebagai kandidat terbaik sementara
+            curr = curr->right;    // Cari yang lebih mahal di sebelah kanan
+        } else {
+            curr = curr->left;     // Kemahalan, cari yang lebih murah di sebelah kiri
+        }
+    }
+
+    return terbaik;
 }
 
 // =============================================================================
@@ -327,7 +217,7 @@ int main() {
     cout << "             /  \\\n";
     cout << "           30    70\n";
     cout << "          /  \\   / \\\n";
-    cout << "        20   40 60   80\n";
+    cout << "         20  40 60   80\n";
 
     // -------------------------------------------------------------------------
     // Soal 1a — nilai duplikat harus ditolak.
@@ -399,18 +289,6 @@ int main() {
     cout << "      true  -> 30 40 50 55 70 80\n";
     cout << "      true  -> 30 40 55 70 80\n";
     cout << "      false -> 30 40 55 70 80   (tidak berubah)\n";
-
-    // -------------------------------------------------------------------------
-    // Mau mencoba dengan angka yang Anda ketik sendiri? Hapus tanda // di
-    // bawah ini, lalu jalankan lagi.
-    // -------------------------------------------------------------------------
-    // int angka;
-    // cout << "\nKetik satu angka untuk dimasukkan: ";
-    // cin >> angka;
-    // cout << "insert -> " << benarSalah(insert(root, angka)) << "\n";
-    // cout << "inorder sekarang: ";
-    // inorder(root);
-    // cout << endl;
 
     cout << "\n==========================================\n";
     cout << " Selesai. Silakan ubah bagian ini untuk\n";
